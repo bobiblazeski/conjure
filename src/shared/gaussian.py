@@ -6,8 +6,7 @@ from scipy.ndimage import gaussian_filter
 
 class Gaussian(nn.Module):
     def __init__(self, kernel_size, sigma=1, padding=True):
-        super(Gaussian, self).__init__()
-        print(kernel_size)
+        super(Gaussian, self).__init__()        
         assert kernel_size % 2 == 1
         self.kernel_size = kernel_size
         self.side = (kernel_size-1) // 2

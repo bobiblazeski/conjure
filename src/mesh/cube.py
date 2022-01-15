@@ -39,7 +39,8 @@ def sphered_vertices(n, r):
     start, end= -r, +r
     d1, d2 = torch.meshgrid(
          torch.linspace(start, end, steps=n),
-         torch.linspace(start, end, steps=n))
+         torch.linspace(start, end, steps=n),
+         indexing='ij')
     d3 = torch.full_like(d1, end) + 1 / n
     sides =  OrderedDict({
         'front': torch.stack((+d3,  d1,  d2), dim=0),
@@ -48,8 +49,7 @@ def sphered_vertices(n, r):
         'left' : torch.stack(( d1, -d3,  d2), dim=0),
         'top'  : torch.stack(( d1,  d2, +d3), dim=0),
         'down' : torch.stack(( d1,  d2, -d3), dim=0),
-    })
-    print(sides['front'].shape)
+    })    
     stacked = torch.stack([p for p in sides.values()])
     return cube_to_sphere(stacked)
     
@@ -71,14 +71,15 @@ def stack_to_dict(stacked):
     })
 
 class SimpleCube(nn.Module):
-    def __init__(self, n, kernel=5, sigma=1, r=0.5):
+    def __init__(self, n, padding=False, kernel=5, sigma=1, r=0.5):
         super(SimpleCube, self).__init__()        
         self.n = n
+        self.padding = padding
         self.kernel = kernel
         self.register_buffer('start', sphered_vertices(n, r))
         self.register_buffer('faces', make_cube_faces(n).int())
         self.params = sides_dict(n)
-        self.gaussian = Gaussian(kernel, sigma=sigma, padding=False)
+        self.gaussian = Gaussian(kernel, sigma=sigma, padding=not padding)
         
     def pad(self, stacked):
         sides = stack_to_dict(stacked)
@@ -89,7 +90,40 @@ class SimpleCube(nn.Module):
         return dict_to_stack(res)
     
     def forward(self):
-        stacked = dict_to_stack(self.params) + self.start
-        padded = self.pad(stacked)        
-        vert = self.gaussian(padded)        
+        vert = dict_to_stack(self.params)         
+        if self.padding:
+            vert = self.pad(vert)                            
+        vert = self.gaussian(vert) + self.start        
         return to_vertices(vert), self.faces
+
+class ProgressiveCube(nn.Module):
+    def __init__(self, n, ns, padding=False, kernel=5, sigma=1, r=0.5):
+        super(ProgressiveCube, self).__init__()
+        self.n = n
+        self.ns = ns
+        self.padding = padding
+        self.kernel = kernel
+        self.register_buffer('start', sphered_vertices(n, r))
+        self.register_buffer('faces', make_cube_faces(n).int())
+        self.params = nn.ModuleList([sides_dict(n) for n in ns])
+        self.gaussian = Gaussian(kernel, sigma=sigma, padding=not padding)
+    
+    def scale(self, t):
+        return  F.interpolate(t, self.n, mode='bilinear', align_corners=True)
+    
+    def pad(self, stacked):
+        sides = stack_to_dict(stacked)
+        res = OrderedDict()
+        for side_name in sides.keys():
+            padded = pad_side(sides, side_name, self.kernel)
+            res[side_name] = padded.permute(2, 0, 1)[None]
+        return dict_to_stack(res)
+
+    def forward(self):
+        res = self.start
+        for params in self.params:
+            vert = self.scale(dict_to_stack(params))
+            if self.padding:
+                vert = self.pad(vert)                            
+            res = res + self.gaussian(vert)
+        return to_vertices(res), self.faces
