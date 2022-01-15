@@ -12,6 +12,7 @@ import torch.nn.functional as F
 from src.shared.gaussian import Gaussian
 from src.shared.faces import make_cube_faces
 from src.shared.padding import pad_side
+from src.shared.singan import Generator
 
 def sides_dict(n):
     return nn.ParameterDict({
@@ -127,3 +128,18 @@ class ProgressiveCube(nn.Module):
                 vert = self.pad(vert)                            
             res = res + self.gaussian(vert)
         return to_vertices(res), self.faces
+
+class NetCube(nn.Module):
+    def __init__(self, n, opt, kernel=5, sigma=1, r=0.5):
+        super(NetCube, self).__init__()        
+        self.n = n        
+        self.kernel = kernel
+        self.register_buffer('start', sphered_vertices(n + 2 * opt.num_layer, r))
+        self.register_buffer('faces', make_cube_faces(n).int())        
+        self.gaussian = Gaussian(kernel, sigma=sigma, padding=True)
+        self.net = Generator(opt)                    
+    
+    def forward(self):
+        vert = self.net(self.start)        
+        vert = self.gaussian(vert) 
+        return to_vertices(vert), self.faces
