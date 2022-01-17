@@ -132,12 +132,16 @@ class ProgressiveCube(nn.Module):
 class NetCube(nn.Module):
     def __init__(self, n, opt, kernel=5, sigma=1, r=0.5):
         super(NetCube, self).__init__()        
-        self.n = n        
+        self.n = n
+        self.r = r
         self.kernel = kernel
         self.register_buffer('start', sphered_vertices(n + 2 * opt.num_layer, r))
         self.register_buffer('faces', make_cube_faces(n).int())        
         self.gaussian = Gaussian(kernel, sigma=sigma, padding=True)
-        self.net = Generator(opt)                    
+        self.net = Generator(opt)
+
+    def get_start(self):
+        return to_vertices(sphered_vertices(self.n, self.r))
     
     def forward(self):
         vert = self.net(self.start)        
