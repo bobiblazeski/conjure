@@ -1,9 +1,7 @@
 # pyright: reportMissingImports=false
 from collections import OrderedDict
 
-import torch
-import torch.nn as nn
-
+import math
 
 import torch
 import torch.nn as nn
@@ -57,6 +55,10 @@ def sphered_vertices(n, r):
 
 def to_vertices(stacked):
     return stacked.permute(0, 2, 3, 1).reshape(-1, 3)
+
+def to_stacked(vs):
+    n = int(math.sqrt(vs.size(0) // 6))    
+    return vs.reshape(6, n, n, 3).permute(0, 3, 1, 2)
 
 def dict_to_stack(params):
     return torch.cat([p for p in params.values()])
