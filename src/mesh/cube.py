@@ -11,6 +11,9 @@ from src.shared.gaussian import Gaussian
 from src.shared.faces import make_cube_faces
 from src.shared.padding import pad_side
 from src.shared.singan import Generator
+from src.shared.sides import (
+    sphered_vertices,
+)
 
 def sides_dict(n):
     return nn.ParameterDict({
@@ -33,32 +36,6 @@ def cube_to_sphere(bxyz):
     y = r * torch.sin(z_angle) * torch.sin(x_angle)
     z = r * torch.cos(z_angle)        
     return torch.stack((x, y, z), dim=1)   
-
-def sphered_vertices(n, r):
-    start, end= -r, +r
-    d1, d2 = torch.meshgrid(
-         torch.linspace(start, end, steps=n),
-         torch.linspace(start, end, steps=n),
-         indexing='ij')
-    d3 = torch.full_like(d1, end) + 1 / n
-    sides =  OrderedDict({
-        'front': torch.stack((+d3,  d1,  d2), dim=0),
-        'right': torch.stack(( d1, +d3,  d2), dim=0),    
-        'back' : torch.stack((-d3,  d1,  d2), dim=0),         
-        'left' : torch.stack(( d1, -d3,  d2), dim=0),
-        'top'  : torch.stack(( d1,  d2, +d3), dim=0),
-        'down' : torch.stack(( d1,  d2, -d3), dim=0),
-    })    
-    stacked = torch.stack([p for p in sides.values()])
-    return cube_to_sphere(stacked)
-    
-
-def to_vertices(stacked):
-    return stacked.permute(0, 2, 3, 1).reshape(-1, 3)
-
-def to_stacked(vs):
-    n = int(math.sqrt(vs.size(0) // 6))    
-    return vs.reshape(6, n, n, 3).permute(0, 3, 1, 2)
 
 def dict_to_stack(params):
     return torch.cat([p for p in params.values()])
