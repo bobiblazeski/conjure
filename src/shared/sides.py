@@ -60,4 +60,10 @@ def make_phi_theta(n):
     phi = torch.atan2(y, x)
     theta = torch.acos(z/r)
     return phi, theta
-      
+
+def to_spherical(bxyz):
+    x, y, z = bxyz[:, 0, :, :], bxyz[:, 1, :, :], bxyz[:, 2, :, :]
+    radii = torch.sqrt(x**2 + y**2 + z**2)
+    phi = torch.atan2(y, x)
+    theta = torch.acos(z/radii)
+    return torch.stack((phi, theta, radii), dim=1)

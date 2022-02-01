@@ -122,4 +122,4 @@ def make_cube_faces(n):
     sides = make_sides(n)
     corners = make_corners(n)
     edges = make_edges(n)
-    return torch.cat((sides, corners, edges))
+    return torch.cat((sides, corners, edges)).int()
