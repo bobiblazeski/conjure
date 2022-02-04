@@ -35,7 +35,7 @@ def cube_to_sphere(bxyz, r_sphere):
     z = r_sphere * torch.cos(z_angle)        
     return torch.stack((x, y, z), dim=1)   
 
-def sphered_vertices(n, r):
+def cubed_vertices(n, r):
     start, end= -r, +r
     d1, d2 = torch.meshgrid(
          torch.linspace(start, end, steps=n),
@@ -50,7 +50,11 @@ def sphered_vertices(n, r):
         'top'  : torch.stack(( d1,  d2, +d3), dim=0),
         'down' : torch.stack(( d1,  d2, -d3), dim=0),
     })  
-    stacked = torch.stack([p for p in sides.values()])
+    return torch.stack([p for p in sides.values()])
+     
+
+def sphered_vertices(n, r):
+    stacked = cubed_vertices(n, r)
     return cube_to_sphere(stacked, r)
 
 def make_phi_theta(n):
