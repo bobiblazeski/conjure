@@ -37,8 +37,8 @@ class Coarse(nn.Module):
             ('conv3', nn.Conv2d(ch, 3, 3, bias=bias)),
             ('act3', torch.nn.Sigmoid()),
         ]))
-        self.abc = nn.Parameter(torch.zeros(3))
-        #self.radii = torch.nn.Parameter(torch.zeros(6, 3, n, n))
+        self.abc = nn.Parameter(torch.zeros(1, 3, 1, 1))
+        self.radii = torch.nn.Parameter(torch.zeros(6, 3, n, n))
         #self.abc = nn.Parameter(torch.randn(3))
         #self.radii = torch.nn.Parameter(torch.randn(6, 3, n, n))
         #self.abc = nn.Parameter(torch.rand(3)-0.5)
@@ -59,8 +59,8 @@ class Coarse(nn.Module):
         return torch.stack((x, y, z), dim=1) 
     
     def forward(self):        
-        radii = self.net(self.sphere1) + 0.5
-        #radii = torch.sigmoid(self.gaussian(self.radii))
+        #radii = self.net(self.sphere1) + 0.5
+        radii = torch.sigmoid(self.gaussian(self.radii) +self.abc)
         #abc = torch.sigmoid(radii + self.abc) 
         stacked = self.get_ellipsoidal(radii)
         vert = to_vertices(stacked)
