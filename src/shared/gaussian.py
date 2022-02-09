@@ -5,15 +5,15 @@ import torch.nn as nn
 from scipy.ndimage import gaussian_filter
 
 class Gaussian(nn.Module):
-    def __init__(self, kernel_size, sigma=1, padding=True):
+    def __init__(self, kernel_size=3, sigma=1, padding=1):
         super(Gaussian, self).__init__()        
         assert kernel_size % 2 == 1
         self.kernel_size = kernel_size
         self.side = (kernel_size-1) // 2
         self.sigma = sigma
-        self.padding = self.side if padding else 0
+        self.padding = padding
         self.seq = nn.Sequential(
-            nn.ReflectionPad2d(self.padding), 
+            nn.ReplicationPad2d(padding), 
             nn.Conv2d(3, 3, self.kernel_size, stride=1, padding=0, bias=None, groups=3)
         )
         self.seq.requires_grad_(False)

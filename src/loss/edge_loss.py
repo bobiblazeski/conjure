@@ -1,5 +1,4 @@
 # pyright: reportMissingImports=false
-import torch
 import torch.nn as nn
 
 class EdgeLoss(nn.Module):

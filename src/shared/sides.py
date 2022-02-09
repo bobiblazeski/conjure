@@ -71,3 +71,77 @@ def to_spherical(bxyz):
     phi = torch.atan2(y, x)
     theta = torch.acos(z/radii)
     return torch.stack((phi, theta, radii), dim=1)
+
+def set_edges(sides, edges):
+    x = sides + 0
+    x[0, :,  :,  0] = edges[0]
+    x[5, :, -1,  :] = edges[0]
+    
+    x[0, :,  :, -1] = edges[1]
+    x[4, :, -1,  :] = edges[1]
+
+    x[0, :,  0,  :] = edges[2]
+    x[3, :, -1,  :] = edges[2]
+
+    x[0, :, -1,  :] = edges[3]
+    x[1, :, -1,  :] = edges[3]
+
+    x[1, :,  :,  0] = edges[4]
+    x[5, :,  :, -1] = edges[4]
+
+    x[1, :,  :, -1] = edges[5]
+    x[4, :,  :, -1] = edges[5]
+
+    x[1, :,  0,  :] = edges[6]
+    x[2, :, -1,  :] = edges[6]
+
+    x[2, :,  :,  0] = edges[7]
+    x[5, :,  0,  :] = edges[7]
+
+    x[2, :,  :, -1] = edges[8]
+    x[4, :,  0,  :] = edges[8]
+
+    x[2, :,  0,  :] = edges[9]
+    x[3, :,  0,  :] = edges[9]
+
+    x[3, :,  :,  0] = edges[10]
+    x[5, :,  :,  0] = edges[10]
+
+    x[3, :,  :, -1] = edges[11]
+    x[4, :,  :,  0] = edges[11]
+    return x
+
+def set_corners(sides, corners):
+    x = sides + 0
+    x[0, :,  0, 0] = corners[0]
+    x[3, :, -1, 0] = corners[0]
+    x[5, :, -1, 0] = corners[0]
+    
+    x[0, :,  0, -1] = corners[1]
+    x[3, :, -1, -1] = corners[1]
+    x[4, :, -1,  0] = corners[1]
+    
+    x[0, :, -1,  0] = corners[2]
+    x[1, :, -1,  0] = corners[2]
+    x[5, :, -1, -1] = corners[2]
+    
+    x[0, :, -1, -1] = corners[3]
+    x[1, :, -1, -1] = corners[3]
+    x[4, :, -1, -1] = corners[3]
+    
+    x[1, :,  0,  0] = corners[4]
+    x[2, :, -1,  0] = corners[4]
+    x[5, :,  0, -1] = corners[4]
+    
+    x[1, :,  0, -1] = corners[5]
+    x[2, :, -1, -1] = corners[5]
+    x[4, :,  0, -1] = corners[5]
+    
+    x[2, :,  0,  0] = corners[6]
+    x[3, :,  0,  0] = corners[6]
+    x[5, :,  0,  0] = corners[6]
+    
+    x[2, :,  0, -1] = corners[7]
+    x[3, :,  0, -1] = corners[7]
+    x[4, :,  0,  0] = corners[7]
+    return x    
