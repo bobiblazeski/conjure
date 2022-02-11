@@ -26,13 +26,13 @@ class Coarse(nn.Module):
         self.register_buffer('theta', theta)
         self.register_buffer('faces', make_cube_faces(n))
         
-        self.abc = nn.Parameter(torch.zeros(1, 3, 1, 1))
+        self.abc = nn.Parameter(torch.randn(1, 3, 1, 1))
         self.radii = nn.ParameterList([
-            nn.Parameter(torch.zeros(6, 3, l, l)) for l in ns])
+            nn.Parameter(torch.randn(6, 3, l, l)) for l in ns])
         self.edges = nn.ParameterList([
-            nn.Parameter(torch.zeros(12, 3, l)) for l in ns])
+            nn.Parameter(torch.randn(12, 3, l)) for l in ns])
         self.corners = nn.ParameterList([
-            nn.Parameter(torch.zeros(8, 3)) for _ in ns])
+            nn.Parameter(torch.randn(8, 3)) for _ in ns])
         
 
         self.gaussian =  Gaussian(kernel, sigma=sigma, padding=padding)
@@ -50,7 +50,7 @@ class Coarse(nn.Module):
         return torch.stack((x, y, z), dim=1) 
     
     def scale(_, t, sz):
-        return F.interpolate(t, sz, mode='bicubic', align_corners=True)
+        return F.interpolate(t, sz, mode='bilinear', align_corners=True)
     
     def forward(self): 
         # radii = set_edges(self.gaussian(self.radii[0]), self.edges[0])
@@ -58,10 +58,10 @@ class Coarse(nn.Module):
         # for (rd, ed, cr) in zip(self.radii[1:], self.edges[1:], self.corners[1:]):            
         #     radii = self.scale(radii, rd.size(-1)) + set_corners(set_edges(self.gaussian(rd), ed), cr)
 
-        radii = self.gaussian(set_edges(self.radii[0], self.edges[0]))
+        radii = self.gaussian(F.tanh(set_edges(self.radii[0], self.edges[0])))
         radii = set_corners(radii, self.corners[0])
         for (rd, ed, cr) in zip(self.radii[1:], self.edges[1:], self.corners[1:]):            
-            radii = self.scale(radii, rd.size(-1)) + self.gaussian(set_corners(set_edges(rd, ed), cr))
+            radii = self.scale(radii, rd.size(-1)) + self.gaussian(F.tanh(set_corners(set_edges(rd, ed), cr)))
 
 
         # radii = set_edges(self.radii[0], self.edges[0])

@@ -5,7 +5,7 @@ import torch.nn as nn
 from scipy.ndimage import gaussian_filter
 
 class Gaussian(nn.Module):
-    def __init__(self, kernel_size=3, sigma=1, padding=1):
+    def __init__(self, kernel_size=3, sigma=1, padding=1,  channels=3):
         super(Gaussian, self).__init__()        
         assert kernel_size % 2 == 1
         self.kernel_size = kernel_size
@@ -14,7 +14,7 @@ class Gaussian(nn.Module):
         self.padding = padding
         self.seq = nn.Sequential(
             nn.ReplicationPad2d(padding), 
-            nn.Conv2d(3, 3, self.kernel_size, stride=1, padding=0, bias=None, groups=3)
+            nn.Conv2d(channels, channels, self.kernel_size, stride=1, padding=0, bias=None, groups=channels)
         )
         self.seq.requires_grad_(False)
         self.weights_init()
