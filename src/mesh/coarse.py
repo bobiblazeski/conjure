@@ -8,16 +8,17 @@ import torch.nn.functional as F
 from src.shared.gaussian import Gaussian
 from src.shared.faces import make_cube_faces
 from src.shared.sides import (    
+    avg_border,
     to_vertices,
     make_phi_theta,
     sphered_vertices,
     to_spherical,
-    set_edges,
-    set_corners,
+    avg_border,
 )
+from src.shared.util import encode
 
 class Coarse(nn.Module):
-    def __init__(self, ns, kernel=3, sigma=1, padding=1, r=0.5, ch=32, bias=True):
+    def __init__(self, ns, kernel=3, sigma=1, padding=1, r=0.5, ch=32, bias=True, scale=0.1):
         super(Coarse, self).__init__()
         n = ns[-1]
         self.n = n
@@ -26,15 +27,11 @@ class Coarse(nn.Module):
         self.register_buffer('theta', theta)
         self.register_buffer('faces', make_cube_faces(n))
         
-        self.abc = nn.Parameter(torch.randn(1, 3, 1, 1))
+        self.abc = nn.Parameter(scale * torch.rand(1, 3, 1, 1))
         self.radii = nn.ParameterList([
-            nn.Parameter(torch.randn(6, 3, l, l)) for l in ns])
-        self.edges = nn.ParameterList([
-            nn.Parameter(torch.randn(12, 3, l)) for l in ns])
-        self.corners = nn.ParameterList([
-            nn.Parameter(torch.randn(8, 3)) for _ in ns])
+            nn.Parameter(scale * torch.rand(6, 3, l, l))  for l in ns])        
         
-
+        self.relu6 =nn.ReLU6()
         self.gaussian =  Gaussian(kernel, sigma=sigma, padding=padding)
    
     # def get_ellipsoidal(self, radii, abc):
@@ -57,11 +54,16 @@ class Coarse(nn.Module):
         # radii = set_corners(radii, self.corners[0])
         # for (rd, ed, cr) in zip(self.radii[1:], self.edges[1:], self.corners[1:]):            
         #     radii = self.scale(radii, rd.size(-1)) + set_corners(set_edges(self.gaussian(rd), ed), cr)
+        size = self.radii[-1].size(-1)
 
-        radii = self.gaussian(F.tanh(set_edges(self.radii[0], self.edges[0])))
-        radii = set_corners(radii, self.corners[0])
-        for (rd, ed, cr) in zip(self.radii[1:], self.edges[1:], self.corners[1:]):            
-            radii = self.scale(radii, rd.size(-1)) + self.gaussian(F.tanh(set_corners(set_edges(rd, ed), cr)))
+        # radii = self.scale(self.gaussian(avg_border(self.radii[0])), size)       
+        # for rd in self.radii[1:]:            
+        #     radii = radii + self.scale(self.gaussian(avg_border(rd)), size)
+          
+        radii = self.scale(self.gaussian(self.radii[0]), size)       
+        for i, rd in enumerate(self.radii[1:]):            
+            radii = radii + self.scale(self.gaussian(rd), size) * 1 / (1+i)**2
+        radii = avg_border(radii)
 
 
         # radii = set_edges(self.radii[0], self.edges[0])
@@ -69,15 +71,12 @@ class Coarse(nn.Module):
         # for (rd, ed, cr) in zip(self.radii[1:], self.edges[1:], self.corners[1:]):            
         #     radii = self.scale(radii, rd.size(-1)) + set_corners(set_edges(rd, ed), cr)
             
+        #radii = torch.sigmoid(F.interpolate(radii, radii.size(-1), mode='bicubic', align_corners=True))
         radii = torch.sigmoid(radii)
+        #radii = (self.relu6(radii) + 0.001) / 6
+        #radii.clip_(min=0.05, max=0.95)
         #radii = torch.sigmoid(radii + self.abc)
         #abc = torch.sigmoid(radii + self.abc) 
         stacked = self.get_ellipsoidal(radii)
         vert = to_vertices(stacked)
         return vert, self.faces, radii, stacked
-
-    def save(self, filename):
-        torch.save(self.radii.data, filename)
-
-    def load(self, filename):
-        self.radii = nn.Parameter(torch.load(filename))
