@@ -1,0 +1,21 @@
+# Locality
+
+# 1 Fitted shapes are disfigured due to vertices
+# moving far away from their neighborhood.
+
+# 2 Hierachy of resolutions
+# Higher resolutions shouldn't be far away from lower resolutions
+# Something like Matrioska dolls.
+
+# 3 Self intersection between surfaces
+# Maybe use repulsive surfaces
+# https://www.cs.cmu.edu/~kmcrane/Projects/RepulsiveSurfaces/index.html
+# https://github.com/icethrush/repulsive-surfaces
+    
+# END GOAL!!!
+
+# Find energies that makes the mesh smooth. 
+# 1 Smoothness
+# Vertices on the grid should be close
+# 2 No self intersections
+# Surface should not intersect itself
