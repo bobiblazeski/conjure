@@ -6,7 +6,7 @@ import torch.nn as nn
 
 import trimesh
 
-from src.mesh.faces import make_cube_faces
+from src.shared.faces import make_cube_faces
 
 
 class Ellipsoid(nn.Module):
@@ -17,10 +17,6 @@ class Ellipsoid(nn.Module):
         self.register_buffer('x_angle', x_angle)
         self.register_buffer('z_angle', z_angle)
         self.register_buffer('faces', make_cube_faces(n).int())        
-        #self.register_buffer('colors', torch.ones(torch.numel(x_angle), 3) * 0.5)
-
-    def to_vertices(_, t):
-        return t.permute(0, 2, 3, 1).reshape(-1, 3)
     
     def get_xz_angles(_, bxyz):
         x, y, z = bxyz[:, 0, :, :], bxyz[:, 1, :, :], bxyz[:, 2, :, :]
@@ -54,9 +50,9 @@ class Ellipsoid(nn.Module):
         return sides
     
     
-    def forward(self, rs):
+    def forward(self, rs, stacked=True):
         ellipsoidal = self.get_ellipsoidal(self.x_angle, self.z_angle, rs)        
-        vert = self.to_vertices(ellipsoidal)
+        vert = ellipsoidal if stacked else self.to_vertices(ellipsoidal)
         return vert, self.faces
 
     def export(self, f, rs):        
