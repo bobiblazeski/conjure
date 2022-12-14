@@ -5,7 +5,6 @@ import torch
 import torch.nn.functional as F
 from src.shared.faces import make_cube_faces
 
-
 def vertex_tris(faces):
     res = [[] for _ in range(faces.max()+1)]
     for fid, face in enumerate(faces):        
@@ -52,7 +51,7 @@ class VertexNormals(torch.nn.Module):
             face_normals = F.normalize(face_normals, p=2, dim=-1) # [F, 3]
         return face_normals.t()
 
-    def vertex_normals_fast(self, vrt, faces):        
+    def vertex_normals_fast(self, vrt, faces, normalized=True):
         face_normals = self.get_face_normals(vrt, faces, normalized=False)    
         r, c = self.vert_tri_indices.shape    
         vert_tri_indices, vert_tri_weights = vertex_tri_maps(faces)        
@@ -60,7 +59,10 @@ class VertexNormals(torch.nn.Module):
             vert_tri_indices.flatten()).reshape(r, c, 3)
         weighted_fn_group = fn_group * vert_tri_weights    
         vertex_normals = weighted_fn_group.sum(dim=-2)
-        return F.normalize(vertex_normals, p=2, dim=-1)
+        if normalized:
+            return F.normalize(vertex_normals, p=2, dim=-1)
+        return vertex_normals
+
         
     def __repr__(self):
         return f'VertexNormals: size: {self.size} path: {self.path}'

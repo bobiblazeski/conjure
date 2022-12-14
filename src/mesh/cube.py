@@ -13,6 +13,7 @@ from src.shared.padding import pad_side
 from src.shared.singan import Generator
 from src.shared.sides import (
     sphered_vertices,
+    to_vertices,
 )
 
 def sides_dict(n):
