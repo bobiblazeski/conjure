@@ -123,3 +123,21 @@ def make_cube_faces(n):
     corners = make_corners(n)
     edges = make_edges(n)
     return torch.cat((sides, corners, edges)).int()
+
+
+
+def make_cylinder_faces(m, n):
+    def closing_faces(rows, cols):    
+      strips = []
+      for row in range(rows-1):        
+          strips.append([
+              (row+1)*cols+cols-1,
+              row*cols+cols-1,
+              row*cols+cols,
+              row*cols
+          ])      
+      return triangle_strips_to_faces(strips)
+
+    main = torch.tensor(make_faces(m, n))
+    closing = torch.tensor(closing_faces(m, n))    
+    return torch.cat((main, closing)).int()
